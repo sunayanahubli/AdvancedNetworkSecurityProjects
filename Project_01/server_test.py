@@ -9,6 +9,7 @@ queue = Queue()
 all_connections = []
 all_address = []
 results = []
+results_withname=[]
 
 # Create a Socket ( connect two computers)
 def create_socket():
@@ -17,7 +18,7 @@ def create_socket():
         global port
         global s
         host = ""
-        port = 9996
+        port = 9995
         s = socket.socket()
 
     except socket.error as msg:
@@ -41,11 +42,11 @@ def bind_socket():
 def accepting_connections():
     for c in all_connections:
         c.close()
-
     del all_connections[:]
     del all_address[:]
 
     while True:
+        client = {}
         try:
             conn, address = s.accept()
             s.setblocking(1)  # prevents timeout
@@ -53,48 +54,64 @@ def accepting_connections():
             all_connections.append(conn)
             all_address.append(address)
 
-            print("Connection has been established :" + address[0])
-
+            # print("Connection has been established :" + address[0])
+            data = conn.recv(1024)
+            client['name'] = data.decode()
+            client['addr']= address[0]
+            client['con']= conn
+            results_withname.append(client)
+            print('Client Registered with name "%s"' % client['name'])
+            print(client)
         except:
             print("Error accepting connections")
 
-def start_turtle():
-
-    while True:
-        cmd = input('turtle> ')
-        if cmd == 'list':
-            list_connections()
-        # elif 'send' in cmd:
-        else:
-            print("Command not recognized")
 
 def list_connections():
      results.clear()
-     for i, conn in enumerate(all_connections):
-            try:
-                print('Attempting to send string')
-                conn.send(str.encode(' '))
-                print('sent string')
-                print('recv string')
-                results.append((all_address[i])[0])
-                # print(type(all_address[i]))
-                print((all_address[i])[0])
-            except:
-                print('Exception')
-                del all_connections[i]
-                del all_address[i]
-                continue
-     print(results)
+     # for i, conn in enumerate(all_connections):
+     #        try:
+     #            print('Attempting to send string')
+     #            conn.send(str.encode(' '))
+     #            print('sent string')
+     #            print('recv string')
+     #            results.append((all_address[i])[0])
+     #            print((all_address[i])[0])
+     #        except:
+     #            print('Exception')
+     #            del all_connections[i]
+     #            del all_address[i]
+     #            continue
+     for i, conn in enumerate(results_withname):
+         try:
+             # print('Attempting to send string')
+             # print(conn['con'])
+             (conn['con']).send(str.encode(' '))
+             # print('sent string')
+             # print('recv string')
+             # results.append((all_address[i])[0])
+             # print((all_address[i])[0])
+         except:
+             print('Exception')
+             del all_connections[i]
+             del all_address[i]
+             del results_withname[i]
+             continue
+     # print(results_withname)
 
 def send_list_connections():
     while True:
         time.sleep(10)
         list_connections()
-        for conn in all_connections:
+        dummy = []
+        for conn in results_withname:
             print("Sending list")
-            conn.send(str.encode((','.join(results))))
-            # client_response = str(conn.recv(20480), "utf-8")
-            print("Sending List Done")
+            dummy.append((conn['addr'] + ":" + conn['name']))
+        for client in results_withname:
+            b= ','.join(dummy)
+            (client['con']).send(str.encode(b))
+            print( client['con'])
+            print(b)
+        print("Sending List Done")
 
 # Create worker threads
 def create_workers():
@@ -111,9 +128,8 @@ def work():
             create_socket()
             bind_socket()
             accepting_connections()
-            # list_connections()
         if x == 2:
-            start_turtle()
+            pass
         if x == 3:
             send_list_connections()
         queue.task_done()
@@ -125,4 +141,6 @@ def create_jobs():
     queue.join()
 
 create_workers()
+
 create_jobs()
+
