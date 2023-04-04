@@ -2,6 +2,13 @@ import socket
 import threading
 import time
 from queue import Queue
+from Crypto.Cipher import AES
+from Crypto.Util.Padding import pad
+from Crypto.Util.Padding import unpad
+from json import dumps, loads
+from requests import post as post_request
+import ssl
+import certifi
 
 NUMBER_OF_THREADS = 3
 JOB_NUMBER = [1, 2, 3]
@@ -19,6 +26,8 @@ def create_socket():
         host = ""
         port = 9995
         s = socket.socket()
+        ssl_context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
+        ssl_context.load_cert_chain(certfile="server.crt", keyfile="server.key")
 
     except socket.error as msg:
         print("Socket creation error: " + str(msg))
@@ -53,14 +62,14 @@ def accepting_connections():
             all_connections.append(conn)
             all_address.append(address)
             data = conn.recv(1024)
-            client['name'] = data.decode()
+            client['name'] = unpad(data,16).decode()
             client['addr']= address[0]
             client['con']= conn
             results.append(client)
             print('Client Registered with name "%s"' % client['name'])
             print(client)
         except:
-            print("Error accepting connections")
+             print("Error accepting connections")
 
 
 def list_connections():

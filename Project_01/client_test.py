@@ -10,6 +10,7 @@ list_of_clients = []
 server = socket.socket()
 client_name = "Client1"
 client_channel_port = 9994
+import ssl
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import pad
 from Crypto.Util.Padding import unpad
@@ -70,10 +71,17 @@ def connect_to_server():
     host = 'localhost'
     port2 = 9995
     server.connect((host, port2))
+    context = ssl.create_default_context()
+    context.check_hostname = True
+    context.verify_mode = ssl.CERT_REQUIRED
+    context.load_verify_locations(cafile="server.crt")
+    s = socket.socket()
+    ssl_sock = context.wrap_socket(s, server_hostname='localhost')
     print(f"Registered with name: {client_name}")
     while True:
-        server.sendall(bytes(client_name, 'utf-8'))
+        server.sendall(pad(str.encode(client_name), 16))
         time.sleep(5)
+
 
 
 def fetch_ip_adresses():
