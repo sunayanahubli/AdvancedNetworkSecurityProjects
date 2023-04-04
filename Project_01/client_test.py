@@ -13,8 +13,8 @@ server = socket.socket()
 client_name = "Client1"
 client_channel_port = 9994
 
-def ping():
 
+def ping():
     message = client_name + ": PING"
     while True:
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
