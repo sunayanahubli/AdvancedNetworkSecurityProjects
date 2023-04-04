@@ -8,8 +8,7 @@ JOB_NUMBER = [1, 2, 3]
 queue = Queue()
 all_connections = []
 all_address = []
-results = []
-results_withname=[]
+results=[]
 
 # Create a Socket ( connect two computers)
 def create_socket():
@@ -53,13 +52,11 @@ def accepting_connections():
 
             all_connections.append(conn)
             all_address.append(address)
-
-            # print("Connection has been established :" + address[0])
             data = conn.recv(1024)
             client['name'] = data.decode()
             client['addr']= address[0]
             client['con']= conn
-            results_withname.append(client)
+            results.append(client)
             print('Client Registered with name "%s"' % client['name'])
             print(client)
         except:
@@ -67,46 +64,26 @@ def accepting_connections():
 
 
 def list_connections():
-     results.clear()
-     # for i, conn in enumerate(all_connections):
-     #        try:
-     #            print('Attempting to send string')
-     #            conn.send(str.encode(' '))
-     #            print('sent string')
-     #            print('recv string')
-     #            results.append((all_address[i])[0])
-     #            print((all_address[i])[0])
-     #        except:
-     #            print('Exception')
-     #            del all_connections[i]
-     #            del all_address[i]
-     #            continue
-     for i, conn in enumerate(results_withname):
+     for i, conn in enumerate(results):
          try:
-             # print('Attempting to send string')
-             # print(conn['con'])
              (conn['con']).send(str.encode(' '))
-             # print('sent string')
-             # print('recv string')
-             # results.append((all_address[i])[0])
-             # print((all_address[i])[0])
+
          except:
              print('Exception')
              del all_connections[i]
              del all_address[i]
-             del results_withname[i]
+             del results[i]
              continue
-     # print(results_withname)
 
 def send_list_connections():
     while True:
         time.sleep(10)
         list_connections()
         dummy = []
-        for conn in results_withname:
+        for conn in results:
             print("Sending list")
             dummy.append((conn['addr'] + ":" + conn['name']))
-        for client in results_withname:
+        for client in results:
             b= ','.join(dummy)
             (client['con']).send(str.encode(b))
             print( client['con'])

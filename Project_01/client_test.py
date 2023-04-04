@@ -1,9 +1,7 @@
-import socket
-import time
-import threading
-import os
 import logging
-import re
+import socket
+import threading
+import time
 
 logger = logging.getLogger(__name__)
 FORMAT = '%(asctime)server %(name)-15.5s %(threadName)-10s %(levelname)-8s %(message)server'
@@ -12,10 +10,15 @@ list_of_clients = []
 server = socket.socket()
 client_name = "Client1"
 client_channel_port = 9994
-
+from Crypto.Cipher import AES
+from Crypto.Util.Padding import pad
+from Crypto.Util.Padding import unpad
+from json import dumps, loads
+from requests import post as post_request
 
 def ping():
     message = client_name + ": PING"
+    message = pad(str.encode(message), 16)
     while True:
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -24,10 +27,10 @@ def ping():
             for client in list_of_clients:
                 if client['ip_address'] != '' and not (client_name) in client['name']:
                     sock.connect((client['ip_address'], client_channel_port))
-                    print(message)
-                    sock.sendall(bytes(message, 'utf-8'))
+                    sock.sendall(message)
+                    print(unpad(message, 16).decode())
                     data = sock.recv(1024)
-                    print(str(client['ip_address']) + ":" + data.decode())
+                    print(str(unpad(data,16).decode()))
                     sock.close()
 
         except Exception as e:
@@ -35,27 +38,31 @@ def ping():
 
         finally:
             time.sleep(15)
-            print('Ping session complete')
-
+            # print('Ping session complete')
+    sock.close()
 
 def pong():
     message = client_name + ": PONG"
-    print("Trying to Pong")
+    message = pad(str.encode(message), 16)
+    # print("Trying to Pong")
 
     while True:
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.bind(('127.0.0.1', client_channel_port))
-        sock.listen(10)
-        (client_socket, client_address) = sock.accept()
         try:
-            data = client_socket.recv(2048).decode()
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            sock.bind(('127.0.0.1', client_channel_port))
+            sock.listen(15)
+            (client_socket, client_address) = sock.accept()
+            data = client_socket.recv(2048)
             if data:
-                client_socket.send(bytes(message, 'utf-8'))
-                print(str(client_address) + ":" + data)
+                print((str(unpad(data, 16).decode())))
+                client_socket.send(message)
+                print(unpad(message, 16).decode())
         except socket.error as e:
             print("Socket error:", e)
         finally:
-            sock.close()
+            time.sleep(2)
+    sock.close()
 
 
 def connect_to_server():
@@ -70,16 +77,16 @@ def connect_to_server():
 
 
 def fetch_ip_adresses():
-    print("Fetch ip")
+    # print("Fetch ip")
     list_of_clients.clear()
     data = server.recv(2048)
     if len(data) > 0:
         data1 = str(data.decode("utf-8"))
-        print("Data" + data1)
+        # print("Data" + data1)
         ips = data1.strip().split(',')
         if len(ips) > 0:
             for ip in ips:
-                print(ip)
+                # print(ip)
                 client = {'name': ip.split(':')[1], 'ip_address': ip.split(':')[0]}
                 if ' ' not in client['name']:
                     list_of_clients.append(client)
